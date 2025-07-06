@@ -9,6 +9,8 @@ import enum
 from . import exceptions
 from . import mixins
 
+# 异步上下文管理器
+# _XXX 命名方式: 表明这个类/变量/方法是内部使用的, 不建议外部直接调用或依赖
 class _ContextManagerMixin:
     async def __aenter__(self):
         await self.acquire()

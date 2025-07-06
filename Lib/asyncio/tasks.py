@@ -101,6 +101,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
+        # 创建一个task时, 如果没有制定context, 会拷贝当前的context
         if context is None:
             self._context = contextvars.copy_context()
         else:

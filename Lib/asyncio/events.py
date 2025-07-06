@@ -37,6 +37,10 @@ from . import format_helpers
 class Handle:
     """Object returned by callback registration methods."""
 
+    # __slots__作用
+    # 1. 限制类实例只能拥有指定的属性
+    # 2. 节省内存(特别是创建大量类实例时)
+    # 3. 提供更快的属性访问速度
     __slots__ = ('_callback', '_args', '_cancelled', '_loop',
                  '_source_traceback', '_repr', '__weakref__',
                  '_context')
@@ -44,6 +48,9 @@ class Handle:
     def __init__(self, callback, args, loop, context=None):
         if context is None:
             context = contextvars.copy_context()
+        # <class '_contextvars.Context'>
+        # methods: copy(); items(); run(); get(); keys(); values()
+        # https://docs.python.org/3/library/contextvars.html#contextvars.Context
         self._context = context
         self._loop = loop
         self._callback = callback
@@ -69,6 +76,7 @@ class Handle:
             info.append(f'created at {frame[0]}:{frame[1]}')
         return info
 
+    # print(repr(Handle Instance)), 使用__repr__可以提高代码的可调式性
     def __repr__(self):
         if self._repr is not None:
             return self._repr
@@ -94,6 +102,7 @@ class Handle:
 
     def _run(self):
         try:
+            # 通过这条语句执行callback function
             self._context.run(self._callback, *self._args)
         except (SystemExit, KeyboardInterrupt):
             raise
@@ -120,6 +129,7 @@ class _ThreadSafeHandle(Handle):
 
     def __init__(self, callback, args, loop, context=None):
         super().__init__(callback, args, loop, context)
+        # RLock: 可重入锁(Reentrant lock)
         self._lock = threading.RLock()
 
     def cancel(self):
@@ -707,6 +717,7 @@ class _BaseDefaultEventLoopPolicy(_AbstractEventLoopPolicy):
         _loop = None
 
     def __init__(self):
+        # self._local时一个thread local对象
         self._local = self._Local()
 
     def get_event_loop(self):

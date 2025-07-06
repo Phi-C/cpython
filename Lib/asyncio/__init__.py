@@ -23,6 +23,7 @@ from .timeouts import *
 from .threads import *
 from .transports import *
 
+# 控制 import *的行为: 只有__all__中列出的名称会被导出
 __all__ = (base_events.__all__ +
            coroutines.__all__ +
            events.__all__ +

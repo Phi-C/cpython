@@ -645,6 +645,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._set_coroutine_origin_tracking(self._debug)
 
         self._old_agen_hooks = sys.get_asyncgen_hooks()
+        # 获取当前线程的唯一标识符
         self._thread_id = threading.get_ident()
         sys.set_asyncgen_hooks(
             firstiter=self._asyncgen_firstiter_hook,
@@ -741,6 +742,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._debug:
             logger.debug("Close %r", self)
         self._closed = True
+        # self._ready和self._scheduled都会被clear
         self._ready.clear()
         self._scheduled.clear()
         self._executor_shutdown_called = True
@@ -753,6 +755,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Returns True if the event loop was closed."""
         return self._closed
 
+    # 在GC时被自动调用
     def __del__(self, _warn=warnings.warn):
         if not self.is_closed():
             _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
@@ -1955,6 +1958,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if handle._scheduled:
             self._timer_cancelled_count += 1
 
+    # event loop中循环处理的核心代码
     def _run_once(self):
         """Run one full iteration of the event loop.
 
@@ -1976,6 +1980,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 else:
                     new_scheduled.append(handle)
 
+            # heapq提供优先队列相关操作, heapq.heapify(list)将一个列表转换为一个堆结构
+            # heapq时处理有限队列和调度任务时非常有用的工具
             heapq.heapify(new_scheduled)
             self._scheduled = new_scheduled
             self._timer_cancelled_count = 0
@@ -1997,6 +2003,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             elif timeout < 0:
                 timeout = 0
 
+        # Q: 输入timeout, 输出evnet_list
         event_list = self._selector.select(timeout)
         self._process_events(event_list)
         # Needed to break cycles when an exception occurs.
@@ -2020,6 +2027,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Use an idiom that is thread-safe without using locks.
         ntodo = len(self._ready)
         for i in range(ntodo):
+            # self._ready时一个双端队列
             handle = self._ready.popleft()
             if handle._cancelled:
                 continue
@@ -2035,6 +2043,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 finally:
                     self._current_handle = None
             else:
+                # events.py里的Hnadle和_ThreadSafeHandle都有_run函数
+                # 实际调用的是Handle的self._context的run函数
                 handle._run()
         handle = None  # Needed to break cycles when an exception occurs.
 

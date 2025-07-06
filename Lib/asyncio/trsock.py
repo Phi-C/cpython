@@ -15,6 +15,8 @@ class TransportSocket:
     def __init__(self, sock: socket.socket):
         self._sock = sock
 
+    # 将类方法转换为属性, 可以像属性一样访问, 不需要加括号
+    # @property创建的属性是read-only的
     @property
     def family(self):
         return self._sock.family
