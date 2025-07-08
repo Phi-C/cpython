@@ -1342,6 +1342,8 @@ flush_io(void)
     _PyErr_SetRaisedException(tstate, exc);
 }
 
+// run_eval_code_obj()只是对PyEval_EvalCode()的一个简单wrapper
+// PyEval_EvalCode()是CPython的主要的evaluation loop
 static PyObject *
 run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, PyObject *locals)
 {
@@ -1370,6 +1372,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena, PyObject* interactive_src,
             int generate_new_source)
 {
+    // PyThreadState持有Python解释器: tstate->interp.
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject* interactive_filename = filename;
     if (interactive_src) {
@@ -1385,6 +1388,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
         }
     }
 
+    // AST编译, 得到Python Codeobject
     PyCodeObject *co = _PyAST_Compile(mod, interactive_filename, flags, -1, arena);
     if (co == NULL) {
         if (interactive_src) {
@@ -1433,6 +1437,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
         return NULL;
     }
 
+    // 对Code Object允许evaluation
     PyObject *v = run_eval_code_obj(tstate, co, globals, locals);
     Py_DECREF(co);
     return v;

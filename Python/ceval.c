@@ -863,6 +863,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         return NULL;
     }
     EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
+    //_PyEval_Vector最后调用到_PyEval_EvalFrame
     PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
     Py_DECREF(func);
     return res;

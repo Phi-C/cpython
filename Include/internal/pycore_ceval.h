@@ -116,8 +116,12 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
 {
     EVAL_CALL_STAT_INC(EVAL_CALL_TOTAL);
     if (tstate->interp->eval_frame == NULL) {
+        // _PyEval_EvalFrameDefault()是默认的的Frame Evaluation Function
+        // 它是一个经过高度优化的函数, 里面每一行代码都对整个Python允许的效率有着重要影响
         return _PyEval_EvalFrameDefault(tstate, frame, throwflag);
     }
+    // 调用的是ThreadState的解释器的eval_frame()方法
+    // https://github.com/Phi-C/Computer-Explorer/blob/main/cpp_explorer/cpython/custom_eval_frame.c
     return tstate->interp->eval_frame(tstate, frame, throwflag);
 }
 

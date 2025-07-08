@@ -370,6 +370,7 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return pymain_exit_err_print();
     }
 
+    // 打开文件
     FILE *fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
         // Ignore the OSError
@@ -380,6 +381,7 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return 2;
     }
 
+    // 如果需要skip第一行, 做相应处理
     if (skip_source_first_line) {
         int ch;
         /* Push back first newline so line numbers remain the same */
@@ -405,8 +407,10 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return pymain_exit_err_print();
     }
 
+    // 这里才开始去执行代码
     /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    // 这个函数在Python/pythonrun.c里
     int run = _PyRun_AnyFileObject(fp, filename, 1, &cf);
     return (run != 0);
 }
@@ -610,6 +614,7 @@ static void
 pymain_run_python(int *exitcode)
 {
     PyObject *main_importer_path = NULL;
+    // _Pyxxx: 内部函数; Pyxxx: 公共函数
     PyInterpreterState *interp = _PyInterpreterState_GET();
     /* pymain_run_stdin() modify the config */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
@@ -678,6 +683,7 @@ pymain_run_python(int *exitcode)
     _PyInterpreterState_SetRunningMain(interp);
     assert(!PyErr_Occurred());
 
+    // 运行python binary的几种模式
     if (config->run_command) {
         *exitcode = pymain_run_command(config->run_command);
     }
