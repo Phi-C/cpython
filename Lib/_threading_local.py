@@ -30,6 +30,7 @@ class _localimpl:
         # We keep it a string for speed but make it unlikely to clash with
         # a "real" attribute.
         self.key = '_threading_local._localimpl.' + str(id(self))
+        # 这里的self.dicts是实现threading.local里最重要的数据结构, 里面存储了每个线程的thead-local attributes
         # { id(Thread) -> (ref(Thread), thread-local dict) }
         self.dicts = {}
 
@@ -58,6 +59,9 @@ class _localimpl:
             local = wrlocal()
             if local is not None:
                 dct = local.dicts.pop(idt)
+        # weakref.ref允许你引用一个对象, 但不会阻止它被垃圾回收. 当对象被回收时, 弱引用会自动失效
+        # weakref.ref(a, b): a是可弱引用的对象.e.g.类实例、list、dict等, 不能是int, str, tuple等不可变类型
+        # b是当a被垃圾回收时的回调函数
         wrlocal = ref(self, local_deleted)
         wrthread = ref(thread, thread_deleted)
         thread.__dict__[key] = wrlocal
@@ -65,10 +69,12 @@ class _localimpl:
         return localdict
 
 
+# 通过_patch临时替换__dict__实现线程隔离
 @contextmanager
 def _patch(self):
     impl = object.__getattribute__(self, '_local__impl')
     try:
+        # 这里get_dict(): key=id(current_thread()); value=local_dict{}
         dct = impl.get_dict()
     except KeyError:
         dct = impl.create_dict()
@@ -80,9 +86,14 @@ def _patch(self):
 
 
 class local:
+    # 如果定义了__slots__, 对象的属性将不再存储在__dict__中, 而是直接通过固定大小的数组(或类似结构)存储, 从而节省内存
+    # 如果注释掉这行, 会报错: AttributeError: 'local' object has no attribute '_local__impl'
+    # 因为_patch会将原本的__dict__覆盖掉
     __slots__ = '_local__impl', '__dict__'
 
     def __new__(cls, /, *args, **kw):
+        # 用户传了参数(args或者kwargs), 但是没有重写__init__(即仍然使用默认的object.__init__)
+        # 这么做是为了让每个线程独立初始化
         if (args or kw) and (cls.__init__ is object.__init__):
             raise TypeError("Initialization arguments are not supported")
         self = object.__new__(cls)
